@@ -3,7 +3,8 @@ from django.conf import settings
 
 register = template.Library()
 
-SCRIPT_TAG = '<script src="%sjs/bootstrap-%s.js" type="text/javascript"></script>'
+JS_TAG = '<script src="%sjs/bootstrap-%s.js" type="text/javascript"></script>'
+CSS_TAG = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrap{{extension}}" media="all" />'.format(STATIC_URL=settings.STATIC_URL)
 
 class BootstrapJSNode(template.Node):
 
@@ -12,14 +13,14 @@ class BootstrapJSNode(template.Node):
 
     def render_all_scripts(self):
         results = [
-            SCRIPT_TAG % (settings.STATIC_URL, 'alerts'),
-            SCRIPT_TAG % (settings.STATIC_URL, 'buttons'),
-            SCRIPT_TAG % (settings.STATIC_URL, 'dropdown'),
-            SCRIPT_TAG % (settings.STATIC_URL, 'modal'),
-            SCRIPT_TAG % (settings.STATIC_URL, 'popover'),
-            SCRIPT_TAG % (settings.STATIC_URL, 'scrollspy'),
-            SCRIPT_TAG % (settings.STATIC_URL, 'tabs'),
-            SCRIPT_TAG % (settings.STATIC_URL, 'twipsy'),
+            JS_TAG % (settings.STATIC_URL, 'alerts'),
+            JS_TAG % (settings.STATIC_URL, 'buttons'),
+            JS_TAG % (settings.STATIC_URL, 'dropdown'),
+            JS_TAG % (settings.STATIC_URL, 'modal'),
+            JS_TAG % (settings.STATIC_URL, 'popover'),
+            JS_TAG % (settings.STATIC_URL, 'scrollspy'),
+            JS_TAG % (settings.STATIC_URL, 'tabs'),
+            JS_TAG % (settings.STATIC_URL, 'twipsy'),
         ]
         return '\n'.join(results)
 
@@ -30,30 +31,30 @@ class BootstrapJSNode(template.Node):
             # popover requires twipsy
             if 'popover' in self.args:
                 self.args.add('twipsy')
-            tags = [SCRIPT_TAG % (settings.STATIC_URL,tag) for tag in self.args]
+            tags = [JS_TAG % (settings.STATIC_URL,tag) for tag in self.args]
             return '\n'.join(tags)
 
-@register.simple_tag
-def bootstrap_custom_less(less):
-    output=[
-            '<link rel="stylesheet/less" type="text/css" href="%s%s" media="all">' % (settings.STATIC_URL, less),
-            '<script src="%sjs/less-1.1.5.min.js" type="text/javascript"></script>' % settings.STATIC_URL,
-        ]
-    return '\n'.join(output)
 
 @register.simple_tag
 def bootstrap_css():
-    if settings.TEMPLATE_DEBUG:
-        return '<link rel="stylesheet" type="text/css" href="%sbootstrap.css">' % settings.STATIC_URL
-    else:
-        return '<link rel="stylesheet" type="text/css" href="%sbootstrap.min.css">' % settings.STATIC_URL
+    file_ext = settings.TEMPLATE_DEBUG and ".css" or ".min.css"
+    return CSS_TAG.format(extension=file_ext)
+
 
 @register.simple_tag
 def bootstrap_less():
     output=[
-            '<link rel="stylesheet/less" type="text/css" href="%slib/bootstrap.less">' % settings.STATIC_URL,
-            '<script src="%sless.js" type="text/javascript"></script>' % settings.STATIC_URL,
-        ]
+        '<link rel="stylesheet/less" type="text/css" href="%slib/bootstrap.less">' % settings.STATIC_URL,
+        '<script src="%sless.js" type="text/javascript"></script>' % settings.STATIC_URL,
+    ]
+    return '\n'.join(output)
+
+@register.simple_tag
+def bootstrap_custom_less(less):
+    output=[
+        '<link rel="stylesheet/less" type="text/css" href="%s%s" media="all">' % (settings.STATIC_URL, less),
+        '<script src="%sjs/less-1.1.5.min.js" type="text/javascript"></script>' % settings.STATIC_URL,
+    ]
     return '\n'.join(output)
 
 @register.tag(name='bootstrap_js')
