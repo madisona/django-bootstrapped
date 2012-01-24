@@ -47,19 +47,27 @@ def get_css_tag(file_name):
 class BootstrapJSNode(template.Node):
 
     def __init__(self, *args):
-        self.args = args
+        self.js_files = args
 
     def render_all_scripts(self, script_list):
         return ''.join([get_js_tag(f) for f in script_list])
 
     def render(self, context):
-        if self.args == ('all',):
+        if self.js_files == ('all',):
             return self.render_all_scripts(BOOTSTRAP_JS)
-        else:
-            # popover requires twipsy
-            if 'popover' in self.args and not "twipsy" in self.args:
-                self.args = ('twipsy',) + self.args
-            return ''.join([get_js_tag(tag) for tag in self.args])
+
+        seen, tags = [], []
+        for f in self.js_files:
+            if f in seen:
+                continue
+
+            if f == 'popover' and 'twipsy' not in seen:
+                tags.append(get_js_tag('twipsy'))
+                seen.append('twipsy')
+            tags.append(get_js_tag(f))
+            seen.append(f)
+
+        return ''.join(tags)
 
 
 @register.simple_tag

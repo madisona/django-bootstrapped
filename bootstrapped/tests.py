@@ -115,3 +115,23 @@ class TemplateTagTests(test.TestCase):
         """)
         result = t.render(template.Context())
         self.assertEqual("".join(expected_tags), result.strip())
+
+    def test_fixes_twipsy_order_when_declared_in_wrong_order(self):
+        expected_tags = [get_js_tag(f) for f in ["twipsy", "popover"]]
+
+        t = template.Template("""
+            {% load bootstrap %}
+            {% bootstrap_js popover twipsy %}
+        """)
+        result = t.render(template.Context())
+        self.assertEqual("".join(expected_tags), result.strip())
+
+    def test_only_adds_same_file_once(self):
+        expected_tags = [get_js_tag(f) for f in ["modal"]]
+
+        t = template.Template("""
+            {% load bootstrap %}
+            {% bootstrap_js modal modal %}
+        """)
+        result = t.render(template.Context())
+        self.assertEqual("".join(expected_tags), result.strip())
