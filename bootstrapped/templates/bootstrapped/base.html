@@ -1,0 +1,21 @@
+{% load bootstrap %}
+{% spaceless %}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>{% block title %}Bootstrap, from Twitter{% endblock %}</title>
+        <meta name="description" content="{% block meta_description %}{% endblock %}">
+        <meta name="author" content="{% block meta_author %}{% endblock %}">
+
+        {% bootstrap_css %}
+        {% block extra_head %}{% endblock %}
+        <style type="text/css">
+            {% block css %}{% endblock %}
+        </style>
+    </head>
+    <body>
+        {% block body %}{% endblock %}
+    </body>
+</html>
+{% endspaceless %}
