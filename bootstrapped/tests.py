@@ -19,7 +19,7 @@ class TemplateTagTests(test.TestCase):
             {% bootstrap_css %}
         """)
         result = t.render(template.Context())
-        expected_tag = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrap.css" media="all" />'.format(
+        expected_tag = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrapped/css/bootstrap.css" media="all" />'.format(
             STATIC_URL=settings.STATIC_URL,
         )
 
@@ -33,7 +33,7 @@ class TemplateTagTests(test.TestCase):
             {% bootstrap_css %}
         """)
         result = t.render(template.Context())
-        expected_tag = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrap.min.css" media="all" />'.format(
+        expected_tag = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrapped/css/bootstrap.min.css" media="all" />'.format(
             STATIC_URL=settings.STATIC_URL,
         )
 

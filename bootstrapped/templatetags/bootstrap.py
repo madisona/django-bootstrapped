@@ -4,7 +4,7 @@ from django.conf import settings
 register = template.Library()
 
 JS_TAG = '<script src="%sjs/bootstrap-%s.js" type="text/javascript"></script>'
-CSS_TAG = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrap{{extension}}" media="all" />'.format(STATIC_URL=settings.STATIC_URL)
+CSS_TAG = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrapped/css/bootstrap{{extension}}" media="all" />'.format(STATIC_URL=settings.STATIC_URL)
 
 class BootstrapJSNode(template.Node):
 
