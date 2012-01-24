@@ -1,63 +1,102 @@
+
 from django import template
 from django.conf import settings
 
+
+
 register = template.Library()
 
-JS_TAG = '<script src="%sjs/bootstrap-%s.js" type="text/javascript"></script>'
-CSS_TAG = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrapped/css/bootstrap{{extension}}" media="all" />'.format(STATIC_URL=settings.STATIC_URL)
+JS_TAG = '<script src="{STATIC_URL}bootstrapped/js/bootstrap-{file_name}{extension}" type="text/javascript"></script>'
+CSS_TAG = '<link rel="stylesheet" type="text/css" href="{STATIC_URL}bootstrapped/css/{file_name}{extension}" media="all" />'
+
+LESS_JS_TAG = '<script src="{STATIC_URL}bootstrapped/js/less-1.1.5.min.js" type="text/javascript"></script>'.format(STATIC_URL=settings.STATIC_URL)
+
+BOOTSTRAP_JS = (
+    'alerts',
+    'buttons',
+    'dropdown',
+    'modal',
+    'twipsy',
+    # popover requires twipsy loaded first
+    'popover',
+    'scrollspy',
+    'tabs',
+)
+
+def get_script_extension(ext):
+    """
+    If template debug is false we want to deliver minified versions.
+    :param ext:
+        file extension. Should include the '.'
+    """
+    return settings.TEMPLATE_DEBUG and ext or ".min" + ext
+
+def get_formatted_tag(format_string, file_name, extension):
+    return format_string.format(
+        STATIC_URL=settings.STATIC_URL,
+        file_name=file_name,
+        extension=get_script_extension(extension),
+    )
+
+def get_js_tag(file_name):
+    return get_formatted_tag(JS_TAG, file_name, ".js")
+
+def get_css_tag(file_name):
+    return get_formatted_tag(CSS_TAG, file_name, ".css")
 
 class BootstrapJSNode(template.Node):
 
-    def __init__(self, args):
-        self.args = set(args)
+    def __init__(self, *args):
+        self.args = args
 
-    def render_all_scripts(self):
-        results = [
-            JS_TAG % (settings.STATIC_URL, 'alerts'),
-            JS_TAG % (settings.STATIC_URL, 'buttons'),
-            JS_TAG % (settings.STATIC_URL, 'dropdown'),
-            JS_TAG % (settings.STATIC_URL, 'modal'),
-            JS_TAG % (settings.STATIC_URL, 'popover'),
-            JS_TAG % (settings.STATIC_URL, 'scrollspy'),
-            JS_TAG % (settings.STATIC_URL, 'tabs'),
-            JS_TAG % (settings.STATIC_URL, 'twipsy'),
-        ]
-        return '\n'.join(results)
+    def render_all_scripts(self, script_list):
+        return ''.join([get_js_tag(f) for f in script_list])
 
     def render(self, context):
-        if 'all' in self.args:
-            return self.render_all_scripts()
+        if self.args == ('all',):
+            return self.render_all_scripts(BOOTSTRAP_JS)
         else:
             # popover requires twipsy
-            if 'popover' in self.args:
-                self.args.add('twipsy')
-            tags = [JS_TAG % (settings.STATIC_URL,tag) for tag in self.args]
-            return '\n'.join(tags)
+            if 'popover' in self.args and not "twipsy" in self.args:
+                self.args = ('twipsy',) + self.args
+            return ''.join([get_js_tag(tag) for tag in self.args])
 
 
 @register.simple_tag
 def bootstrap_css():
-    file_ext = settings.TEMPLATE_DEBUG and ".css" or ".min.css"
-    return CSS_TAG.format(extension=file_ext)
+    return get_css_tag("bootstrap")
 
+
+# todo: django 1.4 gives the ability to send unlimited arguments in a simple_tag. Convert to that once it is available.
+@register.tag(name='bootstrap_js')
+def do_bootstrap_js(parser, token):
+    """
+    USAGE:
+      {% load bootstrap %}
+
+      {% bootstrap_js dropdown %}
+
+    or, to include everything
+
+      {% bootstrap_js all %}
+    """
+    js_files = token.split_contents()[1:]
+    if js_files != ['all'] and not all([f in BOOTSTRAP_JS for f in js_files]):
+        raise template.TemplateSyntaxError("You can only include valid bootstrap js files.")
+
+    return BootstrapJSNode(*js_files)
+
+
+def get_less_css(file_path):
+    return '<link rel="stylesheet/less" type="text/css" href="{STATIC_URL}{file_path}" media="all" />'.format(
+        STATIC_URL=settings.STATIC_URL,
+        file_path=file_path,
+    )
 
 @register.simple_tag
 def bootstrap_less():
-    output=[
-        '<link rel="stylesheet/less" type="text/css" href="%slib/bootstrap.less">' % settings.STATIC_URL,
-        '<script src="%sless.js" type="text/javascript"></script>' % settings.STATIC_URL,
-    ]
-    return '\n'.join(output)
+    return ''.join([get_less_css("lib/bootstrap.less"), LESS_JS_TAG,])
 
 @register.simple_tag
-def bootstrap_custom_less(less):
-    output=[
-        '<link rel="stylesheet/less" type="text/css" href="%s%s" media="all">' % (settings.STATIC_URL, less),
-        '<script src="%sjs/less-1.1.5.min.js" type="text/javascript"></script>' % settings.STATIC_URL,
-    ]
-    return '\n'.join(output)
-
-@register.tag(name='bootstrap_js')
-def do_bootstrap_js(parser, token):
-    print '\n'.join(token.split_contents())
-    return BootstrapJSNode(token.split_contents()[1:])
+def bootstrap_custom_less(less_path):
+    return ''.join([get_less_css(less_path), LESS_JS_TAG,])
